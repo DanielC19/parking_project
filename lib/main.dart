@@ -1,6 +1,11 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-void main() {
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+
+Future<void> main() async {
+  await dotenv.load();
   runApp(const MyApp());
 }
 
@@ -11,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Danilax Parqueaderos',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -31,7 +36,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Danilax Parqueaderos'),
     );
   }
 }
@@ -55,17 +60,66 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  Color? a1;
+  Color? a2;
+  int available = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _getData('65495d7d21573a000d5cf9a8', 1);
+    _getData('65495d8421573a000d5cf9a9', 2);
+  }
+
+  void _refresh() async {
+    _getData(dotenv.env['A1'], 1);
+    _getData(dotenv.env['A2'], 2);
+  }
+
+  void _getData(String? key, int cell) async {
+    final response = await http.get(
+      Uri.parse(
+          'https://industrial.api.ubidots.com/api/v1.6/variables/$key/values'),
+      // Send authorization headers to the backend.
+      headers: {
+        'X-Auth-Token': dotenv.get('TOKEN', fallback: ''),
+      },
+    );
+    if (response.statusCode == 200) {
+      final res = jsonDecode(response.body);
+      if (cell == 1) {
+        if (res['results'] == []) {
+          setState(() {
+            a1 = Colors.green;
+          });
+        } else {
+          setState(() {
+            a1 = Colors.red;
+          });
+        }
+      } else {
+        if (res['results'] != []) {
+          setState(() {
+            a2 = Colors.green;
+          });
+        } else {
+          setState(() {
+            a2 = Colors.red;
+          });
+        }
+      }
+      setState(() {
+        available = 0;
+        if (a1 == Colors.green) {
+          available = available + 1;
+        }
+        if (a2 == Colors.green) {
+          available = available + 1;
+        }
+      });
+    } else {
+      throw Exception('Failed to load answer');
+    }
   }
 
   @override
@@ -77,14 +131,20 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
+      backgroundColor: Color(0xFFEBEBEB),
       appBar: AppBar(
         // TRY THIS: Try changing the color here to a specific color (to
         // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
         // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Colors.white,
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Image(
+          image: AssetImage('assets/eafit-logo.png'),
+          width: 185,
+        ),
+        centerTitle: true,
+        toolbarHeight: 90,
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
@@ -103,23 +163,84 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 60,
+                right: 60,
+                top: 40,
+                bottom: 40,
+              ),
+              child: Text(
+                'Parqueadero Danilax',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 32,
+                  color: Color(0xFF000066),
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Celdas disponibles: $available',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 60,
+                bottom: 60,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: a1,
+                    radius: 30,
+                    child: Text(
+                      'A1',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 20),
+                  CircleAvatar(
+                    backgroundColor: a2,
+                    radius: 30,
+                    child: Text(
+                      'A2',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _refresh();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF000066),
+                padding: EdgeInsets.all(20),
+                shape: StadiumBorder(),
+              ),
+              child: Text(
+                'Actualizar',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(height: 40)
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
