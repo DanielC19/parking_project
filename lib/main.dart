@@ -62,7 +62,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   Color? a1;
   Color? a2;
-  int available = 0;
+  int available = 2;
 
   @override
   void initState() {
@@ -88,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (response.statusCode == 200) {
       final res = jsonDecode(response.body);
       if (cell == 1) {
-        if (res['results'] == []) {
+        if (res['results'][0]['value'] == 1.0) {
           setState(() {
             a1 = Colors.green;
           });
@@ -98,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
           });
         }
       } else {
-        if (res['results'] != []) {
+        if (res['results'][0]['value'] == 1.0) {
           setState(() {
             a2 = Colors.green;
           });
@@ -109,10 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
       setState(() {
-        available = 0;
-        if (a1 == Colors.green) {
-          available = available + 1;
-        }
+        available = 2;
         if (a2 == Colors.green) {
           available = available + 1;
         }
@@ -196,7 +193,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircleAvatar(
-                    backgroundColor: a1,
+                    backgroundColor: Colors.red,
                     radius: 30,
                     child: Text(
                       'A1',
@@ -208,10 +205,34 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   SizedBox(width: 20),
                   CircleAvatar(
-                    backgroundColor: a2,
+                    backgroundColor: Colors.green,
                     radius: 30,
                     child: Text(
                       'A2',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 20),
+                  CircleAvatar(
+                    backgroundColor: Colors.green,
+                    radius: 30,
+                    child: Text(
+                      'A3',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 20),
+                  CircleAvatar(
+                    backgroundColor: a2,
+                    radius: 30,
+                    child: Text(
+                      'A4',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
